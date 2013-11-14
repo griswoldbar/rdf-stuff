@@ -6,6 +6,23 @@ module Console
     SPARQL::Client.new("http://data.linkedmdb.org/sparql")
   end
 
+  def db_client
+    SPARQL::Client.new("http://dbpedia.org/sparql")
+  end
+
+  def naples_query
+    db_client.query(%Q{
+      PREFIX dc: <http://purl.org/dc/terms/>
+      SELECT ?name ?birth
+      WHERE {
+        ?king <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dbpedia.org/class/yago/MonarchsOfGreatBritain> ;
+              <http://dbpedia.org/property/name> ?name ;
+              <http://dbpedia.org/ontology/birthDate> ?birth .
+      }
+      ORDER BY ?birth
+    }).output
+  end
+  
   def count_films(actor="Arnold Schwarzenegger")
     movie_client.query(%Q{
       PREFIX : <http://data.linkedmdb.org/resource/movie/>
@@ -62,10 +79,10 @@ module Console
                       dc:title ?movieName ;
                       :sequel  ?sequel .
           ?sequel     dc:title ?sequelName
-          # OPTIONAL {
-          #   ?prequel :sequel ?movie .
-          # }
-          # FILTER ( ! bound(?prequel) )
+          OPTIONAL {
+            ?prequel :sequel ?movie .
+          }
+          FILTER ( ! bound(?prequel) )
         }
     }).output
   end
@@ -75,7 +92,7 @@ module Console
   end
 
   def output
-    each_solution.map {|s| s.to_hash.each_pair.map{|k,v| v } }.each {|x| puts x.map{|str| str.to_s.ljust(35)}.join(" ") }
+    each_solution.map {|s| s.to_hash.each_pair.map{|k,v| v } }.each {|x| puts x.map{|str| str.to_s.ljust(35)}.join(" ") } && nil
   end
 
 end
